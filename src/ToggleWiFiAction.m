@@ -5,11 +5,16 @@
 //  Created by David Symonds on 2/05/07.
 //
 
-#import "Apple80211.h"
+//#import "Apple80211.h"
 #import "ToggleWiFiAction.h"
+#import <CoreWLAN/CoreWLAN.h>
 
 
 @implementation ToggleWiFiAction
+
+// Begin New CoreWLAN Changes
+@synthesize currentInterface;
+//End New CoreWLAN Changes
 
 - (NSString *)description
 {
@@ -21,6 +26,8 @@
 
 - (BOOL)execute:(NSString **)errorString
 {
+	//Begin New CoreWLAN Changes
+	/*
 	WirelessContextPtr wctxt;
 
 	if (!WirelessIsAvailable())
@@ -32,9 +39,15 @@
 		goto failure;
 	}
 	WirelessDetach(wctxt);
-
-	// Success
+	*/
+	self.currentInterface = [[CWInterface alloc] init];
+	
+	NSError *err = nil;
+	BOOL result = [self.currentInterface setPower:(turnOn ? 1 : 0) error:&err];
+	if( !result )
+		goto failure;
 	return YES;
+	//End New CoreWLAN Changes
 
 failure:
 	if (turnOn)

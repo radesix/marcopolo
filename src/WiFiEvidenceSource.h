@@ -9,11 +9,21 @@
 #import "GenericLoopingEvidenceSource.h"
 
 
+@class CWInterface;
+@class CWNetwork;
+
+
 @interface WiFiEvidenceSource : GenericLoopingEvidenceSource {
 	NSLock *lock;
 	NSMutableArray *apList;
 	int wakeUpCounter;
+	
+	CWInterface *currentInterface;
+	NSMutableArray *scanResults;
 }
+
+@property(readwrite, retain) CWInterface *currentInterface;
+@property(readwrite, retain) NSMutableArray *scanResults;
 
 - (id)init;
 - (void)dealloc;

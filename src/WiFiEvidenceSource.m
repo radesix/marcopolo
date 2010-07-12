@@ -5,11 +5,17 @@
 //  Created by David Symonds on 29/03/07.
 //
 
-#import "Apple80211.h"
+//#import "Apple80211.h"
 #import "WiFiEvidenceSource.h"
+#import <CoreWLAN/CoreWLAN.h>
 
 
 @implementation WiFiEvidenceSource
+
+// Begin New CoreWLAN Changes
+@synthesize currentInterface;
+@synthesize scanResults;
+// End New CoreWLAN Changes
 
 - (id)init
 {
@@ -19,6 +25,11 @@
 	lock = [[NSLock alloc] init];
 	apList = [[NSMutableArray alloc] init];
 	wakeUpCounter = 0;
+	
+	//Begin New CoreWLAN Changes
+	currentInterface = [[CWInterface alloc] init];
+	scanResults = [[NSMutableArray alloc] init];
+	//End New CoreWLAN Changes
 
 	return self;
 }
@@ -27,6 +38,11 @@
 {
 	[lock release];
 	[apList release];
+	
+	//Begin New CoreWLAN Changes
+	self.currentInterface = nil;
+	self.scanResults = nil;
+	//End New CoreWLAN Changes
 
 	[super dealloc];
 }
@@ -48,8 +64,19 @@ static NSString *macToString(const UInt8 *mac)
 {
 	NSMutableArray *all_aps = [NSMutableArray array];
 
-	if (!WirelessIsAvailable())
+	//Begin New CoreWLAN Changes
+	NSError *error = nil;
+	self.scanResults = [NSMutableArray arrayWithArray:[currentInterface scanForNetworksWithParameters:nil error:&error]];
+	if( error )
+		//[[NSAlert alertWithError:error] runModal];
 		goto end_of_scan;
+	else
+		[scanResults sortUsingDescriptors:[NSArray arrayWithObject:[[[NSSortDescriptor alloc] initWithKey:@"ssid" ascending:YES selector:@selector	(caseInsensitiveCompare:)] autorelease]]];
+	// End New CoreWLAN Changes
+	
+	/* Begin OLD 80211 code	
+	//if (!WirelessIsAvailable())
+	  //goto end_of_scan;
 
 	WirelessContextPtr wctxt = 0;
 	WirelessInfo info;
@@ -59,9 +86,9 @@ static NSString *macToString(const UInt8 *mac)
 	WIErr err;
 
 	if ((err = WirelessAttach(&wctxt, 0)) != noErr) {
-#ifdef DEBUG_MODE
+	 #ifdef DEBUG_MODE
 		NSLog(@"%@ >> WirelessAttached failed with error code 0x%08x", [self class], err);
-#endif
+	 #endif
 		goto end_of_scan;
 	}
 
@@ -75,6 +102,7 @@ static NSString *macToString(const UInt8 *mac)
 					ssid, @"SSID", mac, @"MAC", nil]];
 		do_scan = NO;
 	}
+	
 
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"WiFiAlwaysScans"])
 		do_scan = YES;
@@ -112,6 +140,22 @@ static NSString *macToString(const UInt8 *mac)
 	}
 
 	WirelessDetach(wctxt);
+	
+	End OLD 80211 code*/
+	
+	//Begin New CoreWLAN Changes
+	int row = 0;
+	
+	while( row < [scanResults count] )
+	{
+		CWNetwork *network = [scanResults objectAtIndex:row];
+		
+		[all_aps addObject:[NSDictionary dictionaryWithObjectsAndKeys:
+							[network ssid], @"SSID", [network bssid], @"MAC", nil]];
+		row++;
+		
+	}
+	//End New CoreWLAN Changes
 
 end_of_scan:
 	[lock lock];
