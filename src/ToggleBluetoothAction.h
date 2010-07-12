@@ -1,0 +1,21 @@
+//
+//  ToggleBluetoothAction.h
+//  MarcoPolo
+//
+//  Created by David Symonds on 3/04/07.
+//
+
+#import <Cocoa/Cocoa.h>
+#import "ToggleableAction.h"
+
+
+@interface ToggleBluetoothAction : ToggleableAction {
+	int setState;
+}
+
+- (NSString *)description;
+- (BOOL)execute:(NSString **)errorString;
++ (NSString *)helpText;
++ (NSString *)creationHelpText;
+
+@end
